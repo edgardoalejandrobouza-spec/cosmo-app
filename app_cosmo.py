@@ -43,8 +43,7 @@ credenciales_google = {
 }
 
 # Iniciamos conexión usando los datos provistos directamente
-conn = st.connection("gsheets", **credenciales_google)
-
+conn = st.connection("gsheets", type="gsheets", **credenciales_google)
 def cargar_datos_drive(nombre_hoja, columnas_defecto):
     try:
         df = conn.read(worksheet=nombre_hoja, ttl="1s")

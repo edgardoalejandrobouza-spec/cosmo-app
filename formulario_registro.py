@@ -16,6 +16,9 @@ def mostrar_formulario_registro(conn, df_registros):
             
         btn_registro = st.form_submit_button("💾 Guardar Cotización")
         if btn_registro and f_coti_emp:
+            # Enlace universal del documento explícito para el guardado
+            url_doc = "https://google.com"
+            
             nuevo_id = len(df_registros) + 1
             nueva_fila = pd.DataFrame([{
                 "ID Coti": nuevo_id, 
@@ -25,6 +28,8 @@ def mostrar_formulario_registro(conn, df_registros):
                 "Monto": f_monto
             }])
             df_actualizado = pd.concat([df_registros, nueva_fila], ignore_index=True)
-            conn.update(worksheet="Cotizaciones", data=df_actualizado)
+            
+            # Forzamos la actualización pasándole la dirección completa
+            conn.update(spreadsheet=url_doc, worksheet="Cotizaciones", data=df_actualizado)
             st.cache_data.clear()
-            st.success(f"🎉 ¡Cotización guardada exitosamente bajo el ID #{nuevo_id}!")
+            st.success(f"🎉 ¡Cotización guardada exitosamente en Drive bajo el ID #{nuevo_id}!")

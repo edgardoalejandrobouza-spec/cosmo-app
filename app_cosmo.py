@@ -11,7 +11,7 @@ st.write("Panel unificado para administración y visualización de datos en tiem
 
 # 2. Función de carga ultra-segura a prueba de diferencias de columnas
 def cargar_datos_seguro(nombre_archivo, columnas_deseadas):
-    ruta_archivo = f"C:/Mis bases SQL/{nombre_archivo}"
+    ruta_archivo = "clientes_limpios.csv"
     if os.path.exists(ruta_archivo):
         df = pd.read_csv(ruta_archivo, sep=";")
         # Si el archivo tiene la misma cantidad de columnas, las renombramos

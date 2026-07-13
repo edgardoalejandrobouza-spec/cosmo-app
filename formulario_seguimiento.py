@@ -13,6 +13,8 @@ def mostrar_formulario_seguimiento(conn, df_seguimientos):
         
         btn_seg = st.form_submit_button("💾 Registrar Seguimiento")
         if btn_seg and f_seg_emp:
+            url_doc = "https://google.com"
+            
             nuevo_id_seg = len(df_seguimientos) + 1
             nueva_fila_seg = pd.DataFrame([{
                 "ID Seg": nuevo_id_seg, 
@@ -22,6 +24,7 @@ def mostrar_formulario_seguimiento(conn, df_seguimientos):
                 "Comentario/Detalle": f_comentario
             }])
             df_act_seg = pd.concat([df_seguimientos, nueva_fila_seg], ignore_index=True)
-            conn.update(worksheet="Seguimientos", data=df_act_seg)
+            
+            conn.update(spreadsheet=url_doc, worksheet="Seguimientos", data=df_act_seg)
             st.cache_data.clear()
-            st.success(f"🎉 ¡Seguimiento guardado exitosamente bajo el ID #{nuevo_id_seg}!")
+            st.success(f"🎉 ¡Seguimiento guardado exitosamente en Drive bajo el ID #{nuevo_id_seg}!")

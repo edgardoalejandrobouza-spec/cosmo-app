@@ -48,7 +48,7 @@ info_servicio = {
 }
 
 # Nos conectamos pasando las credenciales directamente de forma nativa
-conn = st.connection("gsheets", type=GSheetsConnection, credentials=info_servicio)
+conn = st.connection("gsheets", type=GSheetsConnection)
 
 def cargar_datos_drive(nombre_hoja, columnas_defecto):
     try:

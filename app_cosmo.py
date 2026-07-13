@@ -64,7 +64,7 @@ with tab_ver_seg:
     modulo_seguimiento.ver_seguimientos(df_seguimientos)
 
 with tab_car_cli:
-    formulario_cliente.mostrar_formulario_cliente()
+    formulario_cliente.mostrar_formulario_cliente(conn, df_total)
 
 with tab_car_reg:
     formulario_registro.mostrar_formulario_registro(conn, df_registros)

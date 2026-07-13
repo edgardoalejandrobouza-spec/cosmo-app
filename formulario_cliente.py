@@ -36,7 +36,7 @@ def mostrar_formulario_cliente(conn_vieja, df_total):
                 }
                 
                 # Creamos una conexión limpia exclusiva para el guardado seguro
-                conn_real = st.connection("gsheets_form_cli", type=GSheetsConnection, credentials=credenciales_google)
+                conn_real = st.connection("gsheets_form_cli", type=GSheetsConnection, credentials=credenciales_formulario)
                 url_doc = "https://google.com"
                 
                 try:

@@ -67,7 +67,8 @@ with tab_car_cli:
     formulario_cliente.mostrar_formulario_cliente()
 
 with tab_car_reg:
-    formulario_registro.cargar_registro(conn, df_registros)
-
+    formulario_registro.mostrar_formulario_registro(conn, df_registros)
+   
 with tab_car_seg:
-    modulo_seguimiento.cargar_seguimiento(conn, df_seguimientos)
+    formulario_seguimiento.mostrar_formulario_seguimiento(conn, df_seguimientos)
+  

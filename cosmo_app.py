@@ -1,5 +1,5 @@
 import streamlit as st
-
+from st_supabase_connection import SupabaseConnection
 # Conexión nativa oficial con Supabase
 conn_sb = st.connection("supabase", type=st.connections.SupabaseConnection)
 

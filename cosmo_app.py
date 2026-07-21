@@ -1,3 +1,5 @@
+import streamlit as st
+
 # Conexión nativa oficial con Supabase
 conn_sb = st.connection("supabase", type=st.connections.SupabaseConnection)
 

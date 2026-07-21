@@ -30,3 +30,15 @@ def cargar_clientes_supabase():
     except Exception as e:
         st.error(f"Error al cargar datos desde Supabase: {e}")
         return pd.DataFrame()
+# --- CODIGO DE PRUEBA AL FINAL DEL ARCHIVO ---
+st.title("📊 Panel de Control Cosmo App")
+
+# Llamamos a la función para traer los datos
+df_clientes = cargar_clientes_supabase()
+
+if not df_clientes.empty:
+    st.success(f"¡Conexión exitosa! Se cargaron {len(df_clientes)} clientes desde Supabase.")
+    # Mostramos la tabla interactiva
+    st.dataframe(df_clientes)
+else:
+    st.warning("No se encontraron registros en la tabla clientes_tbl o el DataFrame está vacío.")

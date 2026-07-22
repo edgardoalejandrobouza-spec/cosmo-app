@@ -1,42 +1,69 @@
 import streamlit as st
-import pandas as pd
 
-def mostrar_formulario_cliente(conn, df_total):
-    st.subheader("➕ Registro de Nuevo Cliente en la Red")
-    
-    with st.form("form_alta_cliente", clear_on_submit=True):
-        f_empresa = st.text_input("Nombre de la Empresa / Institución *")
+def formulario_clientes_fnc(conn, df):
+    """Renderiza el formulario de carga de clientes y guarda los datos en Supabase."""
+    st.subheader("➕ Registro de Nuevo Cliente")
+    st.write("Complete los datos requeridos para dar de alta un cliente en el sistema.")
+
+    with st.form("nuevo_cliente_form", clear_on_submit=True):
+        col1, col2 = st.columns(2)
         
-        col_c1, col_c2 = st.columns(2)
-        with col_c1:
-            f_contacto = st.text_input("Nombre del Contacto")
-            f_mail = st.text_input("Correo Electrónico")
-            f_tel = st.text_input("Teléfono Principal")
-        with col_c2:
-            f_vendedor = st.text_input("Vendedor Asignado (Abrev.)", placeholder="Ej: NC, ALE")
-            f_rubro = st.text_input("Rubro de la Empresa", placeholder="Ej: Farmacéutica, Química")
-            f_zona = st.text_input("Zona / Localidad", placeholder="Ej: CABA, NOA")
+        with col1:
+            empresa_institucion = st.text_input("Empresa / Institución *")
+            contacto = st.text_input("Nombre de Contacto *")
+            mail = st.text_input("Correo Electrónico")
+            telefono = st.text_input("Teléfono Fijo")
+            celular = st.text_input("Celular")
+            cargo = st.text_input("Cargo del Contacto")
+            sector = st.text_input("Sector")
+            
+        with col2:
+            zonaa = st.text_input("Zona Abrev. (Ej: CABA, GBA)")
+            calificacion = st.selectbox("Calificación", ["A", "B", "C", "D"], index=0)
+            estado_cliente = st.selectbox("Estado del Cliente", ["Activo", "Inactivo", "Potencial"], index=0)
+            vendedor = st.text_input("Vendedor Asignado")
+            zona = st.text_input("Zona Geográfica")
+            subzona = st.text_input("Localidad / Subzona")
+            direccion = st.text_input("Dirección Comercial")
+            
+        rubro = st.text_input("Rubro / Actividad")
+        web = st.text_input("Sitio Web (URL)")
+        imaps = st.text_input("Enlace iMaps / Google Maps")
+        observaciones = st.text_area("Observaciones / Detalles adicionales")
         
-        f_obs = st.text_area("Observaciones Iniciales de la Cuenta")
-        
-        btn_cliente = st.form_submit_button("💾 Guardar Cliente de Forma Real")
-        if btn_cliente:
-            if not f_empresa:
-                st.error("⚠️ El nombre de la empresa es obligatorio para darle el alta.")
-            else:
-                url_doc = "https://google.com"
-                try:
-                    df_existente = conn.read(spreadsheet=url_doc, worksheet="Clientes_Nuevos", ttl="0s")
-                except Exception:
-                    df_existente = pd.DataFrame(columns=["ID", "Empresa", "Contacto", "Email", "Teléfono", "Vendedor", "Rubro", "Zona", "Observaciones"])
+        st.write("(*) Campos obligatorios")
+        boton_guardar = st.form_submit_button("💾 Guardar Cliente en Supabase")
+
+    if boton_guardar:
+        if not empresa_institucion or not contacto:
+            st.error("Por favor, complete los campos obligatorios (Empresa y Contacto).")
+        else:
+            try:
+                nuevo_registro = {
+                    "zonaa": zonaa,
+                    "calificacion": calificacion,
+                    "estado_cliente": estado_cliente,
+                    "vendedor": vendedor,
+                    "empresa_institucion": empresa_institucion,
+                    "rubro": rubro,
+                    "contacto": contacto,
+                    "mail": mail,
+                    "telefono": telefono,
+                    "celular": celular,
+                    "cargo": cargo,
+                    "sector": sector,
+                    "zona": zona,
+                    "subzona": subzona,
+                    "direccion": direccion,
+                    "web": web,
+                    "observaciones": observaciones,
+                    "imaps": imaps
+                }
                 
-                nuevo_id = len(df_existente) + 1
-                nueva_fila = pd.DataFrame([{
-                    "ID": nuevo_id, "Empresa": f_empresa, "Contacto": f_contacto, "Email": f_mail,
-                    "Teléfono": f_tel, "Vendedor": f_vendedor, "Rubro": f_rubro, "Zona": f_zona, "Observaciones": f_obs
-                }])
+                # Inserción usando el cliente oficial
+                conn.table("clientes_tbl").insert(nuevo_registro).execute()
+                st.success(f"¡Excelente! El cliente '{empresa_institucion}' fue registrado con éxito.")
+                st.balloons()
                 
-                df_actualizado = pd.concat([df_existente, nueva_fila], ignore_index=True)
-                conn.update(spreadsheet=url_doc, worksheet="Clientes_Nuevos", data=df_actualizado)
-                st.cache_data.clear()
-                st.success(f"🎉 ¡El cliente '{f_empresa}' fue guardado con éxito total bajo el ID #{nuevo_id}!")
+            except Exception as e:
+                st.error(f"Hubo un error al guardar en la Base de Datos: {e}")

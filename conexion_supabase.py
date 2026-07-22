@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
-from st_supabase_connection import SupabaseConnection
+from supabase import create_client, Client
 
 def obtener_conexion():
-    """Inicializa y retorna la conexión limpia a Supabase."""
+    """Inicializa y retorna el cliente oficial y limpio de Supabase."""
     try:
         url_sb = st.secrets.get("SUPABASE_URL")
         key_sb = st.secrets.get("SUPABASE_KEY")
@@ -12,14 +12,16 @@ def obtener_conexion():
             st.error("Las claves SUPABASE_URL o SUPABASE_KEY no están definidas en los Secrets.")
             return None
             
-        return st.connection("supabase", type=SupabaseConnection, url=url_sb, key=key_sb)
+        # Inicialización oficial estándar
+        return create_client(url_sb, key_sb)
     except Exception as e:
-        st.error(f"Error crítico en la configuración de credenciales: {e}")
+        st.error(f"Error crítico al conectar con Supabase: {e}")
         return None
 
 def cargar_clientes(conn):
-    """Trae los clientes ordenados y renombrados desde la base de datos."""
+    """Trae los clientes ordenados y renombrados usando el cliente oficial."""
     try:
+        # Consulta limpia de la API oficial de Supabase
         respuesta = conn.table("clientes_tbl").select("*").execute()
         df = pd.DataFrame(respuesta.data)
         if df.empty:
@@ -43,7 +45,7 @@ def cargar_clientes(conn):
         return pd.DataFrame()
 
 def cargar_tabla_generica(conn, nombre_tabla, columnas_defecto):
-    """Trae datos de cotizaciones o seguimientos de forma genérica."""
+    """Trae datos de cotizaciones o seguimientos de forma genérica usando el cliente oficial."""
     try:
         respuesta = conn.table(nombre_tabla).select("*").execute()
         df = pd.DataFrame(respuesta.data)

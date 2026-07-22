@@ -20,12 +20,13 @@ def obtener_conexion():
 def cargar_clientes(conn):
     """Trae los clientes ordenados y renombrados usando el cliente oficial con límite."""
     try:
-        # Limitamos a 1000 para un procesamiento instantáneo en el navegador
+        # Consultamos las filas de la tabla clientes_tbl
         respuesta = conn.table("clientes_tbl").select("*").limit(1000).execute()
         df = pd.DataFrame(respuesta.data)
         if df.empty:
             return pd.DataFrame()
             
+        # 🚨 CORREGIDO: Mapeo estricto con los nombres en minúsculas que se ven en tu captura
         columnas_db = [
             'id_cliente', 'zonaa', 'calificacion', 'estado_cliente', 'vendedor',
             'empresa_institucion', 'rubro', 'contacto', 'mail', 'telefono',
@@ -35,12 +36,13 @@ def cargar_clientes(conn):
         columnas_validas = [col for col in columnas_db if col in df.columns]
         df = df[columnas_validas]
         
+        # Renombramos para la visualización en la interfaz del usuario de Streamlit
         df.columns = ['ID', 'Zona Abrev.', 'Calificación', 'Estado', 'Vendedor', 'Empresa / Institución', 
                       'Rubro', 'Contacto', 'Email', 'Teléfono', 'Celular', 'Cargo', 'Sector', 
                       'Zona', 'Localidad/Subzona', 'Dirección', 'Web', 'Observaciones', 'iMaps'][:len(columnas_validas)]
         return df
     except Exception as e:
-        st.error(f"Error al leer clientes: {e}")
+        st.error(f"Error al procesar columnas de clientes: {e}")
         return pd.DataFrame()
 
 def cargar_tabla_generica(conn, nombre_tabla, columnas_defecto):

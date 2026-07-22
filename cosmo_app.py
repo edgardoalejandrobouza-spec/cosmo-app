@@ -11,9 +11,9 @@ st.write("Panel unificado para administración y visualización de datos en tiem
 conn = cns.obtener_conexion()
 
 if conn is not None:
-    # Lógica de carga sin conflictos de parámetros de caché
+    # Lógica de carga apuntando a los nombres exactos de tus tablas de la nomenclatura
     df_total = cns.cargar_clientes(conn)
-    df_registros = cns.cargar_tabla_generica(conn, "cotizaciones_tbl", ["ID Coti", "Fecha", "Empresa", "Detalle/Pliego", "Monto"])
+    df_registros = cns.cargar_tabla_generica(conn, "registros_tbl", ["ID Coti", "Fecha", "Empresa", "Detalle/Pliego", "Monto"])
     df_seguimientos = cns.cargar_tabla_generica(conn, "seguimientos_tbl", ["ID Seg", "Fecha Acción", "Cliente", "Estado Actual", "Comentario/Detalle"])
 
     # Llama al segundo archivo externo (Botones y Funciones de Interfaz)

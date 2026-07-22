@@ -17,7 +17,6 @@ def obtener_conexion():
         st.error(f"Error crítico en la configuración de credenciales: {e}")
         return None
 
-@st.cache_data(ttl="5m")
 def cargar_clientes(conn):
     """Trae los clientes ordenados y renombrados desde la base de datos."""
     try:

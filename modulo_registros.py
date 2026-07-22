@@ -1,12 +1,11 @@
-
 import streamlit as st
 
 def ver_registros(df):
-    """Muestra la tabla de cotizaciones/registros en la pestaña correspondiente."""
-    st.subheader("📊 Listado de Cotizaciones Registradas")
+    """Muestra la tabla de registros en la pestaña correspondiente."""
+    st.subheader("📊 Listado de Registros (Cotizaciones)")
     
     if df is not None and not df.empty:
-        st.success(f"Se encontraron {len(df)} registros de cotizaciones.")
+        st.success(f"Se encontraron {len(df)} registros.")
         st.dataframe(df, use_container_width=True)
     else:
-        st.warning("No hay registros de cotizaciones disponibles para mostrar o la tabla está vacía.")
+        st.warning("No hay registros disponibles para mostrar o la tabla está vacía.")

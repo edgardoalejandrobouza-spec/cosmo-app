@@ -1,28 +1,8 @@
-import streamlit as st
-import pandas as pd
-from supabase import create_client, Client
-
-def obtener_conexion():
-    """Inicializa y retorna el cliente oficial y limpio de Supabase."""
-    try:
-        url_sb = st.secrets.get("SUPABASE_URL")
-        key_sb = st.secrets.get("SUPABASE_KEY")
-        
-        if not url_sb or not key_sb:
-            st.error("Las claves SUPABASE_URL o SUPABASE_KEY no están definidas en los Secrets.")
-            return None
-            
-        # Inicialización oficial estándar
-        return create_client(url_sb, key_sb)
-    except Exception as e:
-        st.error(f"Error crítico al conectar con Supabase: {e}")
-        return None
-
 def cargar_clientes(conn):
     """Trae los clientes ordenados y renombrados usando el cliente oficial."""
     try:
-        # Consulta limpia de la API oficial de Supabase
-        respuesta = conn.table("clientes_tbl").select("*").execute()
+        # 🚨 AGREGAMOS .limit(1000) para que la app cargue de forma instantánea
+        respuesta = conn.table("clientes_tbl").select("*").limit(1000).execute()
         df = pd.DataFrame(respuesta.data)
         if df.empty:
             return pd.DataFrame()
@@ -43,12 +23,3 @@ def cargar_clientes(conn):
     except Exception as e:
         st.error(f"Error al leer clientes: {e}")
         return pd.DataFrame()
-
-def cargar_tabla_generica(conn, nombre_tabla, columnas_defecto):
-    """Trae datos de cotizaciones o seguimientos de forma genérica usando el cliente oficial."""
-    try:
-        respuesta = conn.table(nombre_tabla).select("*").execute()
-        df = pd.DataFrame(respuesta.data)
-        return df if not df.empty else pd.DataFrame(columns=columnas_defecto)
-    except Exception:
-        return pd.DataFrame(columns=columnas_defecto)

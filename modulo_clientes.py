@@ -1,25 +1,12 @@
-@st.cache_data(ttl="5m")
-def cargar_clientes(_conn): # 👈 AGREGÁ EL GUION BAJO AQUÍ
-    """Trae los clientes ordenados y renombrados desde la base de datos."""
-    try:
-        respuesta = _conn.table("clientes_tbl").select("*").execute() # 👈 CAMBIÁ A _conn AQUÍ
-        df = pd.DataFrame(respuesta.data)
-        if df.empty:
-            return pd.DataFrame()
-            
-        columnas_db = [
-            'id_cliente', 'zonaa', 'calificacion', 'estado_cliente', 'vendedor',
-            'empresa_institucion', 'rubro', 'contacto', 'mail', 'telefono',
-            'celular', 'cargo', 'sector', 'zona', 'subzona', 'direccion',
-            'web', 'observaciones', 'imaps'
-        ]
-        columnas_validas = [col for col in columnas_db if col in df.columns]
-        df = df[columnas_validas]
-        
-        df.columns = ['ID', 'Zona Abrev.', 'Calificación', 'Estado', 'Vendedor', 'Empresa / Institución', 
-                      'Rubro', 'Contacto', 'Email', 'Teléfono', 'Celular', 'Cargo', 'Sector', 
-                      'Zona', 'Localidad/Subzona', 'Dirección', 'Web', 'Observaciones', 'iMaps'][:len(columnas_validas)]
-        return df
-    except Exception as e:
-        st.error(f"Error al leer clientes: {e}")
-        return pd.DataFrame()
+import streamlit as st
+
+def ver_clientes(df):
+    """Recibe el DataFrame con los datos y dibuja la tabla en la pestaña correspondiente."""
+    st.subheader("📋 Listado de Clientes Registrados")
+    
+    if df is not None and not df.empty:
+        st.success(f"Se encontraron {len(df)} clientes en la base de datos.")
+        # Muestra la tabla interactiva con buscador y filtros nativos
+        st.dataframe(df, use_container_width=True)
+    else:
+        st.warning("No hay registros de clientes disponibles para mostrar o la tabla está vacía.")

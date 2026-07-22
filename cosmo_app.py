@@ -1,44 +1,22 @@
 import streamlit as st
-import pandas as pd
-from st_supabase_connection import SupabaseConnection
+import conexion_supabase as cns
+import botones_funcion as btn
 
-# Conexión nativa oficial con Supabase
-conn_sb = st.connection("supabase", type=SupabaseConnection)
+# Configuración estética de la aplicación global
+st.set_page_config(page_title="Cosmo - Panel de Control", layout="wide", page_icon="🚀")
+st.title("🚀 Sistema de Gestión Integral - Cosmo")
+st.write("Panel unificado para administración y visualización de datos en tiempo real.")
 
-@st.cache_data(ttl="5m") # Cache de 5 minutos para optimizar el rendimiento de tu aplicación
-def cargar_clientes_supabase():
-    try:
-        # Hacemos la consulta a tu nueva tabla clientes_tbl
-        respuesta = conn_sb.table("clientes_tbl").select("*").execute()
-        df = pd.DataFrame(respuesta.data)
-        
-        # Mapeamos los nombres de columnas idénticos a los de la base de datos
-        columnas_ordenadas = [
-            'id_cliente', 'zonaa', 'calificacion', 'estado_cliente', 'vendedor',
-            'empresa_institucion', 'rubro', 'contacto', 'mail', 'telefono',
-            'celular', 'cargo', 'sector', 'zona', 'subzona', 'direccion',
-            'web', 'observaciones', 'imaps'
-        ]
-        
-        if not df.empty:
-            # Aseguramos que solo se seleccionen columnas existentes para evitar errores
-            columnas_validas = [col for col in columnas_ordenadas if col in df.columns]
-            return df[columnas_validas]
-        else:
-            return pd.DataFrame(columns=columnas_ordenadas)
-            
-    except Exception as e:
-        st.error(f"Error al cargar datos desde Supabase: {e}")
-        return pd.DataFrame()
-# --- CODIGO DE PRUEBA AL FINAL DEL ARCHIVO ---
-st.title("📊 Panel de Control Cosmo App")
+# Llama al primer archivo externo (Conexión)
+conn = cns.obtener_conexion()
 
-# Llamamos a la función para traer los datos
-df_clientes = cargar_clientes_supabase()
+if conn is not None:
+    # Carga de datos optimizada desde Supabase
+    df_total = cns.cargar_clientes(conn)
+    df_registros = cns.cargar_tabla_generica(conn, "cotizaciones_tbl", ["ID Coti", "Fecha", "Empresa", "Detalle/Pliego", "Monto"])
+    df_seguimientos = cns.cargar_tabla_generica(conn, "seguimientos_tbl", ["ID Seg", "Fecha Acción", "Cliente", "Estado Actual", "Comentario/Detalle"])
 
-if not df_clientes.empty:
-    st.success(f"¡Conexión exitosa! Se cargaron {len(df_clientes)} clientes desde Supabase.")
-    # Mostramos la tabla interactiva
-    st.dataframe(df_clientes)
+    # Llama al segundo archivo externo (Botones y Funciones de Interfaz)
+    btn.renderizar_interfaz(conn, df_total, df_registros, df_seguimientos)
 else:
-    st.warning("No se encontraron registros en la tabla clientes_tbl o el DataFrame está vacío.")
+    st.error("No se pudo iniciar la aplicación debido a un fallo en el módulo de conexión.")

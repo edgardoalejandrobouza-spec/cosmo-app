@@ -1,7 +1,7 @@
 import streamlit as st
 
-def ver_registros(df):
-    """Muestra la tabla de registros en la pestaña correspondiente."""
+def modulo_registros_fnc(df):
+    """Muestra la tabla de registros en el módulo correspondiente."""
     st.subheader("📊 Listado de Registros (Cotizaciones)")
     
     if df is not None and not df.empty:

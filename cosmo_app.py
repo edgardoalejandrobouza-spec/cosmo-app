@@ -11,8 +11,8 @@ st.write("Panel unificado para administración y visualización de datos en tiem
 conn = cns.obtener_conexion()
 
 if conn is not None:
-    # Carga de datos optimizada desde Supabase
-    df_total = cns.cargar_clientes(conn)
+    # 🚨 CORRECCIÓN: Pasamos el parámetro como _conn indicando explícitamente el guion bajo
+    df_total = cns.cargar_clientes(_conn=conn)
     df_registros = cns.cargar_tabla_generica(conn, "cotizaciones_tbl", ["ID Coti", "Fecha", "Empresa", "Detalle/Pliego", "Monto"])
     df_seguimientos = cns.cargar_tabla_generica(conn, "seguimientos_tbl", ["ID Seg", "Fecha Acción", "Cliente", "Estado Actual", "Comentario/Detalle"])
 

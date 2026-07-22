@@ -8,7 +8,7 @@ def ver_seguimientos(df_seguimientos):
     st.dataframe(df_seguimientos, use_container_width=True, hide_index=True)
 
 # Función para CARGAR un Seguimiento (Guarda en Google Drive)
-def cargar_seguimiento(conn, df_seguimientos):
+def cargar_seguimientos(conn, df_seguimientos):
     st.subheader("➕ Registrar Acción de Seguimiento")
     with st.form("form_seguimiento_modulo", clear_on_submit=True):
         f_seg_emp = st.text_input("Empresa / Cliente *")

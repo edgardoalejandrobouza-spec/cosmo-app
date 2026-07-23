@@ -1,59 +1,47 @@
+import os
 import streamlit as st
 import pandas as pd
 from supabase import create_client, Client
 
-def obtener_conexion():
-    """Inicializa y retorna el cliente oficial de Supabase limpiando la URL."""
+@st.cache_resource
+def obtener_conexion() -> Client:
+    """Establece y cachea la conexión con Supabase usando secretos de Streamlit."""
     try:
-        url_sb = st.secrets.get("SUPABASE_URL")
-        key_sb = st.secrets.get("SUPABASE_KEY")
-        
-        if not url_sb or not key_sb:
-            st.error("Las claves SUPABASE_URL o SUPABASE_KEY no están definidas en los Secrets.")
-            return None
-            
-        # Forzamos la limpieza de la URL por si quedó alguna barra en los Secrets
-        url_clean = url_sb.strip().rstrip('/')
-        return create_client(url_clean, key_sb)
+        url: str = st.secrets["SUPABASE_URL"]
+        key: str = st.secrets["SUPABASE_KEY"]
+        return create_client(url, key)
     except Exception as e:
-        st.error(f"Error crítico al conectar con Supabase: {e}")
+        # Se corrigió la asignación inválida dentro de st.error
+        st.error(f"Error de configuración en las credenciales: {e}")
         return None
 
-def cargar_clientes(conn):
-    """Trae los clientes de clientes_tbl usando mapeo seguro."""
+@st.cache_data
+def cargar_clientes(_conn: Client) -> pd.DataFrame:
+    """Carga la tabla de clientes completa."""
+    if not _conn:
+        return pd.DataFrame()
     try:
-        respuesta = conn.table("clientes_tbl").select("*").limit(1000).execute()
-        
-        if not respuesta or not hasattr(respuesta, 'data') or not respuesta.data:
-            return pd.DataFrame()
-            
-        df = pd.DataFrame(respuesta.data)
-        if df.empty:
-            return pd.DataFrame()
-            
-        mapeo_columnas = {
-            'id_cliente': 'ID', 'zonaa': 'Zona Abrev.', 'calificacion': 'Calificación', 
-            'estado_cliente': 'Estado', 'vendedor': 'Vendedor', 'empresa_institucion': 'Empresa / Institución', 
-            'rubro': 'Rubro', 'contacto': 'Contacto', 'mail': 'Email', 'telefono': 'Teléfono',
-            'celular': 'Celular', 'cargo': 'Cargo', 'sector': 'Sector', 'zona': 'Zona', 
-            'subzona': 'Localidad/Subzona', 'direccion': 'Dirección', 'web': 'Web', 
-            'observaciones': 'Observaciones', 'imaps': 'iMaps'
-        }
-        
-        columnas_existentes = [col for col in df.columns if col in mapeo_columnas]
-        df = df[columnas_existentes]
-        return df.rename(columns=mapeo_columnas)
+        response = _conn.table("clientes").select("*").execute()
+        return pd.DataFrame(response.data)
     except Exception as e:
-        st.error(f"Error al procesar columnas de clientes: {e}")
+        st.warning(f"No se pudo cargar la tabla clientes: {e}")
         return pd.DataFrame()
 
-def cargar_tabla_generica(conn, nombre_tabla, columnas_defecto):
-    """Trae datos de cualquier tabla secundaria de forma segura."""
+@st.cache_data
+def cargar_tabla_generica(_conn: Client, tabla_nombre: str, columnas: list = None) -> pd.DataFrame:
+    """Carga cualquier tabla específica solicitando solo las columnas deseadas a Supabase."""
+    if not _conn:
+        return pd.DataFrame()
     try:
-        respuesta = conn.table(nombre_tabla).select("*").execute()
-        if not respuesta or not hasattr(respuesta, 'data') or not respuesta.data:
-            return pd.DataFrame(columns=columnas_defecto)
-        df = pd.DataFrame(respuesta.data)
-        return df if not df.empty else pd.DataFrame(columns=columnas_defecto)
-    except Exception:
-        return pd.DataFrame(columns=columnas_defecto)
+        # Optimización: Se solicitan solo las columnas necesarias desde la base de datos
+        query_cols = ",".join(columnas) if columnas else "*"
+        response = _conn.table(tabla_nombre).select(query_cols).execute()
+        
+        df = pd.DataFrame(response.data)
+        if df.empty and columnas:
+            return pd.DataFrame(columns=columnas)
+            
+        return df.fillna("")
+    except Exception as e:
+        st.warning(f"No se pudo cargar la tabla {tabla_nombre}: {e}")
+        return pd.DataFrame()

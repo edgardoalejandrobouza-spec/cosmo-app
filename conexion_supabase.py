@@ -22,24 +22,47 @@ def cargar_clientes(conn):
     try:
         # Consultamos las filas de la tabla clientes_tbl
         respuesta = conn.table("clientes_tbl").select("*").limit(1000).execute()
+        
+        # Validar si la respuesta contiene datos válidos
+        if not respuesta or not hasattr(respuesta, 'data') or not respuesta.data:
+            return pd.DataFrame()
+            
         df = pd.DataFrame(respuesta.data)
         if df.empty:
             return pd.DataFrame()
             
-        # 🚨 CORREGIDO: Mapeo estricto con los nombres en minúsculas que se ven en tu captura
-        columnas_db = [
-            'id_cliente', 'zonaa', 'calificacion', 'estado_cliente', 'vendedor',
-            'empresa_institucion', 'rubro', 'contacto', 'mail', 'telefono',
-            'celular', 'cargo', 'sector', 'zona', 'subzona', 'direccion',
-            'web', 'observaciones', 'imaps'
-        ]
-        columnas_validas = [col for col in columnas_db if col in df.columns]
-        df = df[columnas_validas]
+        # Diccionario de mapeo explícito para evitar errores por desajuste de longitud (20 columnas en DB)
+        mapeo_columnas = {
+            'id_cliente': 'ID', 
+            'zonaa': 'Zona Abrev.', 
+            'calificacion': 'Calificación', 
+            'estado_cliente': 'Estado', 
+            'vendedor': 'Vendedor',
+            'empresa_institucion': 'Empresa / Institución', 
+            'rubro': 'Rubro', 
+            'contacto': 'Contacto', 
+            'mail': 'Email', 
+            'telefono': 'Teléfono',
+            'celular': 'Celular', 
+            'cargo': 'Cargo', 
+            'sector': 'Sector', 
+            'zona': 'Zona', 
+            'subzona': 'Localidad/Subzona', 
+            'direccion': 'Dirección',
+            'web': 'Web', 
+            'observaciones': 'Observaciones', 
+            'imaps': 'iMaps'
+            # Si hay una vigésima columna en tu base de datos, agrégala aquí abajo automáticamente:
+            # 'nombre_columna_20': 'Etiqueta Interfaz'
+        }
         
-        # Renombramos para la visualización en la interfaz del usuario de Streamlit
-        df.columns = ['ID', 'Zona Abrev.', 'Calificación', 'Estado', 'Vendedor', 'Empresa / Institución', 
-                      'Rubro', 'Contacto', 'Email', 'Teléfono', 'Celular', 'Cargo', 'Sector', 
-                      'Zona', 'Localidad/Subzona', 'Dirección', 'Web', 'Observaciones', 'iMaps'][:len(columnas_validas)]
+        # Filtramos solo las columnas que realmente llegaron desde la base de datos
+        columnas_existentes = [col for col in df.columns if col in mapeo_columnas]
+        df = df[columnas_existentes]
+        
+        # Renombramos de forma segura usando el diccionario
+        df = df.rename(columns=mapeo_columnas)
+        
         return df
     except Exception as e:
         st.error(f"Error al procesar columnas de clientes: {e}")
@@ -49,6 +72,8 @@ def cargar_tabla_generica(conn, nombre_tabla, columnas_defecto):
     """Trae datos de cotizaciones o seguimientos de forma genérica usando el cliente oficial."""
     try:
         respuesta = conn.table(nombre_tabla).select("*").execute()
+        if not respuesta or not hasattr(respuesta, 'data') or not respuesta.data:
+            return pd.DataFrame(columns=columnas_defecto)
         df = pd.DataFrame(respuesta.data)
         return df if not df.empty else pd.DataFrame(columns=columnas_defecto)
     except Exception:

@@ -27,7 +27,7 @@ def descargar_clientes_directo(conn: Client) -> pd.DataFrame:
     """Trae los registros de clientes_tbl y mapea las columnas en español."""
         try:
         respuesta = conn.table("clientes_tbl").select("*").execute()
-              if not respuesta or not hasattr(respuesta, 'data') or not respuesta.data:
+            if not respuesta or not hasattr(respuesta, 'data') or not respuesta.data:
             return pd.DataFrame()
         df = pd.DataFrame(respuesta.data)
         if df.empty:

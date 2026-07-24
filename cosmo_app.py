@@ -1,25 +1,30 @@
 import streamlit as st
 import conexion_supabase as cns
-import botones_funcion as btn
 
 # Configuración estética de la aplicación global
-st.set_page_config(page_title="Cosmo - Panel de Control", layout="wide", page_icon="🚀")
+st.set_page_config(page_title="Cosmo - Módulo Clientes", layout="wide", page_icon="🚀")
 st.title("🚀 Sistema de Gestión Integral - Cosmo")
-st.write("Panel unificado para administración y visualización de datos en tiempo real.")
+st.write("Visualización centralizada de la base de datos de clientes en tiempo real.")
 
 # Llama al primer archivo externo (Conexión)
 conn = cns.obtener_conexion()
 
 if conn is not None:
-    # Lógica de carga apuntando a los nombres reales que se ven en tu pantalla de Supabase
+    st.success("✅ Conexión con Supabase establecida con éxito.")
+    
+    # Intentamos cargar la tabla apuntando a tu función limpia
+    st.subheader("👥 Listado General de Clientes (clientes_tbl)")
     df_total = cns.cargar_clientes_tbl(conn)
     
-    # 🚨 CORREGIDO: Buscamos "cotizaciones_tbl" que es el nombre real en tu base de datos
-    df_registros = cns.cargar_tabla_generica(conn, "cotizaciones_tbl", ["ID Coti", "Fecha", "Empresa", "Detalle/Pliego", "Monto"])
-    df_seguimientos = cns.cargar_tabla_generica(conn, "seguimientos_tbl", ["ID Seg", "Fecha Acción", "Cliente", "Estado Actual", "Comentario/Detalle"])
-
-    # Llama al segundo archivo externo (Botones y Funciones de Interfaz)
-    btn.renderizar_interfaz(conn, df_total, df_registros, df_seguimientos)
+    # Validamos que el DataFrame contenga tus 8,218 registros antes de dibujarlo
+    if df_total is not None and not df_total.empty:
+        st.write(f"Se encontraron **{len(df_total)}** registros cargados en el sistema.")
+        # Muestra la tabla interactiva ocupando todo el ancho de la pantalla
+        st.dataframe(df_total, use_container_width=True)
+    else:
+        st.warning("⚠️ El DataFrame de clientes está vacío. Revisa que el nombre de la tabla en 'conexion_supabase.py' sea exactamente 'clientes_tbl'.")
+        
+    st.divider()
+    st.info("💡 Nota: Las secciones de cotizaciones y seguimientos se pausaron temporalmente para limpiar la pantalla.")
 else:
     st.error("No se pudo iniciar la aplicación debido a un fallo en el módulo de conexión.")
-

@@ -5,7 +5,7 @@ from supabase import create_client, Client
 # Configuración estética de la aplicación global
 st.set_page_config(page_title="Cosmo - Módulo Clientes Directo", layout="wide", page_icon="🚀")
 st.title("🚀 Sistema de Gestión Integral - Cosmo")
-st.write("Visualización directa de clientes_tbl desde Supabase (Sin archivos externos).")
+st.write("Visualización directa de clientes_tbl desde Supabase con filtros avanzados.")
 
 # 1. Función de conexión integrada directamente aquí
 def iniciar_conexion_directa() -> Client:
@@ -13,11 +13,9 @@ def iniciar_conexion_directa() -> Client:
     try:
         url_sb = st.secrets.get("SUPABASE_URL")
         key_sb = st.secrets.get("SUPABASE_KEY")
-        
         if not url_sb or not key_sb:
             st.error("Error: Las claves SUPABASE_URL o SUPABASE_KEY no están en los Secrets.")
             return None
-            
         url_clean = url_sb.strip().rstrip('/')
         return create_client(url_clean, key_sb)
     except Exception as e:
@@ -28,17 +26,13 @@ def iniciar_conexion_directa() -> Client:
 def descargar_clientes_directo(conn: Client) -> pd.DataFrame:
     """Trae los registros de clientes_tbl y mapea las columnas en español."""
     try:
-        # Consulta directa a la tabla real de tu Supabase
         respuesta = conn.table("clientes_tbl").select("*").limit(1000).execute()
-        
         if not respuesta or not hasattr(respuesta, 'data') or not respuesta.data:
             return pd.DataFrame()
-            
         df = pd.DataFrame(respuesta.data)
         if df.empty:
             return pd.DataFrame()
             
-        # Diccionario para pasar los nombres técnicos a nombres limpios en la pantalla
         mapeo_columnas = {
             'id_cliente': 'ID', 'zonaa': 'Zona Abrev.', 'calificacion': 'Calificación', 
             'estado_cliente': 'Estado', 'vendedor': 'Vendedor', 'empresa_institucion': 'Empresa / Institución', 
@@ -47,8 +41,6 @@ def descargar_clientes_directo(conn: Client) -> pd.DataFrame:
             'subzona': 'Localidad/Subzona', 'direccion': 'Dirección', 'web': 'Web', 
             'observaciones': 'Observaciones', 'imaps': 'iMaps'
         }
-        
-        # Filtramos y renombramos solo las columnas que realmente existan en la BD
         columnas_existentes = [col for col in df.columns if col in mapeo_columnas]
         df = df[columnas_existentes]
         return df.rename(columns=mapeo_columnas)
@@ -60,16 +52,41 @@ def descargar_clientes_directo(conn: Client) -> pd.DataFrame:
 conn_directa = iniciar_conexion_directa()
 
 if conn_directa is not None:
-    st.success("✅ ¡Conectado a Supabase de forma directa desde cosmo_app.py!")
-    
-    # Ejecutamos la descarga de datos
+    st.success("✅ ¡Conectado a Supabase de forma directa!")
     df_total = descargar_clientes_directo(conn_directa)
     
     if df_total is not None and not df_total.empty:
-        st.write(f"Se encontraron **{len(df_total)}** registros en la tabla.")
-        # Dibujamos la tabla interactiva de Streamlit ocupando todo el ancho
-        st.dataframe(df_total, use_container_width=True, hide_index=True)
+        # --- NUEVA SECCIÓN DE CRITERIOS DE BÚSQUEDA ---
+        st.markdown("### 🔍 Criterios de Búsqueda y Filtrado")
+        
+        # Desplegable para seleccionar qué columnas se quieren auditar
+        columnas_disponibles = list(df_total.columns)
+        columnas_seleccionadas = st.multiselect(
+            "⚙️ Selecciona las columnas para aplicar la búsqueda (puedes tildar varias):",
+            options=columnas_disponibles,
+            default=["Empresa / Institución", "Vendedor"]  # Filtros por defecto iniciales
+        )
+        
+        # Cuadro de entrada de texto para escribir la búsqueda
+        texto_busqueda = st.text_input("✍️ Escribe el término a buscar:")
+        
+        # Lógica de filtrado en tiempo real sobre el DataFrame
+        df_filtrado = df_total.copy()
+        if texto_busqueda and columnas_seleccionadas:
+            # Creamos una máscara booleana para filtrar filas
+            mascara = pd.Series(False, index=df_total.index)
+            for col in columnas_seleccionadas:
+                # Busca coincidencias de texto ignorando mayúsculas/minúsculas y manejando nulos
+                coincidencia = df_total[col].astype(str).str.contains(texto_busqueda, case=False, na=False)
+                mascara = mascara | coincidencia
+            df_filtrado = df_total[mascara]
+        
+        # --- RENDERIZADO DE TABLA ---
+        st.subheader("👥 Listado General de Clientes (clientes_tbl)")
+        st.write(f"Mostrando **{len(df_filtrado)}** de **{len(df_total)}** registros totales.")
+        
+        st.dataframe(df_filtrado, width=None, hide_index=True)
     else:
-        st.warning("La tabla 'clientes_tbl' no devolvió registros o las columnas no coinciden.")
+        st.warning("La tabla 'clientes_tbl' no devolvió registros.")
 else:
-    st.error("La aplicación no puede continuar porque falló la autenticación con el servidor.")
+    st.error("Fallo de autenticación con el servidor.")

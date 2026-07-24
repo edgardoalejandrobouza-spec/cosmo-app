@@ -3,26 +3,20 @@ import pandas as pd
 from supabase import create_client, Client
 
 # Configuración estética de la aplicación global
-st.set_page_config(page_title="Cosmo - Módulo Clientes Directo", layout="wide", page_icon="🚀")
+st.set_page_config(page_title="Cosmo - Gestión Integral", layout="wide", page_icon="🚀")
 st.title("🚀 Sistema de Gestión Integral - Cosmo")
-st.write("Visualización directa de clientes_tbl desde Supabase con filtros avanzados.")
+st.write("Panel unificado para la administración, búsqueda e incorporación de clientes en tiempo real.")
 
-# --- CAMBIO DE COLOR A AZUL CELESTE (ESTILOS CSS) ---
+# --- ESTILOS CSS AZUL CELESTE ---
 st.markdown(
     """
     <style>
-    /* Cambia el fondo y borde de las etiquetas seleccionadas en el multiselect */
     span[data-baseweb="tag"] {
-        background-color: #E0F7FA !important; /* Fondo celeste claro */
-        color: #006064 !important; /* Texto azul oscuro/turquesa para buen contraste */
-        border: 1px solid #B2EBF2 !important; /* Borde celeste */
+        background-color: #E0F7FA !important;
+        color: #006064 !important;
+        border: 1px solid #B2EBF2 !important;
         border-radius: 4px !important;
     }
-    /* Cambia el color de la X para borrar la etiqueta */
-    span[data-baseweb="tag"] role[button] or svg {
-        fill: #006064 !important;
-    }
-    /* Cambia el color del texto del término a buscar o inputs cuando se seleccionan */
     .stTextInput div[data-baseweb="input"] {
         border-color: #4DD0E1 !important;
     }
@@ -31,9 +25,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 1. Función de conexión integrada directamente aquí
+# 1. Función de conexión integrada
 def iniciar_conexion_directa() -> Client:
-    """Inicializa el cliente oficial de Supabase leyendo los secrets."""
     try:
         url_sb = st.secrets.get("SUPABASE_URL")
         key_sb = st.secrets.get("SUPABASE_KEY")
@@ -46,11 +39,9 @@ def iniciar_conexion_directa() -> Client:
         st.error(f"Error crítico de conexión: {e}")
         return None
 
-# 2. Función de carga integrada directamente aquí
+# 2. Función de carga integrada (Limpia los "None" visuales)
 def descargar_clientes_directo(conn: Client) -> pd.DataFrame:
-    """Trae los registros de clientes_tbl y mapea las columnas en español."""
     try:
-        # Consulta directa sin límites para traer los 8,218 registros
         respuesta = conn.table("clientes_tbl").select("*").execute()
         if not respuesta or not hasattr(respuesta, 'data') or not respuesta.data:
             return pd.DataFrame()
@@ -68,45 +59,128 @@ def descargar_clientes_directo(conn: Client) -> pd.DataFrame:
         }
         columnas_existentes = [col for col in df.columns if col in mapeo_columnas]
         df = df[columnas_existentes]
-        return df.rename(columns=mapeo_columnas)
+        df = df.rename(columns=mapeo_columnas)
+        # Reemplaza los valores nulos o "None" por un espacio vacío para que la tabla sea más estética
+        return df.fillna("")
     except Exception as e:
         st.error(f"Error al procesar la tabla: {e}")
         return pd.DataFrame()
 
-# 3. Execution del programa principal
+# 3. Ejecución del programa principal
 conn_directa = iniciar_conexion_directa()
 
 if conn_directa is not None:
-    st.success("✅ ¡Conectado a Supabase de forma directa!")
-    df_total = descargar_clientes_directo(conn_directa)
+    # Creamos dos pestañas grandes para organizar el sistema de forma limpia
+    pestana_visualizar, pestana_cargar = st.tabs(["📊 Visualización y Búsqueda", "➕ Incorporar Nuevo Cliente"])
     
-    if df_total is not None and not df_total.empty:
-        # --- SECCIÓN DE CRITERIOS DE BÚSQUEDA ---
-        st.markdown("### 🔍 Criterios de Búsqueda y Filtrado")
+    # --- PESTAÑA 1: VISUALIZACIÓN ---
+    with pestana_visualizar:
+        df_total = descargar_clientes_directo(conn_directa)
         
-        columnas_disponibles = list(df_total.columns)
-        columnas_seleccionadas = st.multiselect(
-            "⚙️ Selecciona las columnas para aplicar la búsqueda (puedes tildar varias):",
-            options=columnas_disponibles,
-            default=["Empresa / Institución", "Vendedor"]
-        )
+        if df_total is not None and not df_total.empty:
+            st.markdown("### 🔍 Criterios de Búsqueda y Filtrado")
+            columnas_disponibles = list(df_total.columns)
+            columnas_seleccionadas = st.multiselect(
+                "⚙️ Selecciona las columnas para aplicar la búsqueda:",
+                options=columnas_disponibles,
+                default=["Empresa / Institución", "Vendedor"]
+            )
+            
+            texto_busqueda = st.text_input("✍️ Escribe el término a buscar:", key="buscar_input")
+            
+            df_filtrado = df_total.copy()
+            if texto_busqueda and columnas_seleccionadas:
+                mascara = pd.Series(False, index=df_total.index)
+                for col in columnas_seleccionadas:
+                    coincidencia = df_total[col].astype(str).str.contains(texto_busqueda, case=False, na=False)
+                    mascara = mascara | coincidencia
+                df_filtrado = df_total[mascara]
+            
+            st.subheader("👥 Listado General de Clientes (clientes_tbl)")
+            st.write(f"Mostrando **{len(df_filtrado)}** de **{len(df_total)}** registros totales.")
+            st.dataframe(df_filtrado, width="stretch", hide_index=True)
+        else:
+            st.warning("La tabla 'clientes_tbl' no devolvió registros.")
+            
+    # --- PESTAÑA 2: FORMULARIO DE CARGA ---
+    with pestana_cargar:
+        st.markdown("### 📝 Ficha de Registro de Cliente")
+        st.write("Completa los datos en los casilleros. Los campos con (*) son obligatorios.")
         
-        texto_busqueda = st.text_input("✍️ Escribe el término a buscar:")
-        
-        df_filtrado = df_total.copy()
-        if texto_busqueda and columnas_seleccionadas:
-            mascara = pd.Series(False, index=df_total.index)
-            for col in columnas_seleccionadas:
-                coincidencia = df_total[col].astype(str).str.contains(texto_busqueda, case=False, na=False)
-                mascara = mascara | coincidencia
-            df_filtrado = df_total[mascara]
-        
-        # --- RENDERIZADO DE TABLA ---
-        st.subheader("👥 Listado General de Clientes (clientes_tbl)")
-        st.write(f"Mostrando **{len(df_filtrado)}** de **{len(df_total)}** registros totales.")
-        
-        st.dataframe(df_filtrado, width="stretch", hide_index=True)
-    else:
-        st.warning("La tabla 'clientes_tbl' no devolvió registros.")
+        # Iniciamos el contenedor del formulario estructurado
+        with st.form("formulario_alta_cliente", clear_on_submit=True):
+            # Fila 1: Datos principales (Dividida en 3 columnas)
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                empresa = st.text_input("Empresa / Institución (*)")
+                contacto = st.text_input("Nombre de Contacto")
+                vendedor = st.text_input("Vendedor Asignado")
+            with c2:
+                rubro = st.text_input("Rubro Comercial")
+                cargo = st.text_input("Cargo del Contacto")
+                sector = st.text_input("Sector / Departamento")
+            with c3:
+                estado = st.selectbox("Estado del Cliente", ["Activo", "Inactivo", "Potencial", "En Seguimiento"])
+                calificacion = st.text_input("Calificación (Ej: FNB, FNR)")
+                zona_abrev = st.text_input("Zona Abrev. (Código)")
+                
+            st.divider()
+            
+            # Fila 2: Datos de localización y contacto
+            c4, c5, c6 = st.columns(3)
+            with c4:
+                mail = st.text_input("Correo Electrónico (Email)")
+                telefono = st.text_input("Teléfono Fijo")
+                celular = st.text_input("Teléfono Celular")
+            with c5:
+                zona = st.text_input("Zona Geográfica")
+                subzona = st.text_input("Localidad / Subzona")
+                direccion = st.text_input("Dirección Física")
+            with c6:
+                web = st.text_input("Sitio Web (URL)")
+                imaps = st.text_input("Enlace iMaps / Coordenadas")
+                
+            # Fila 3: Comentarios extensos ocupando todo el ancho
+            observaciones = st.text_area("Observaciones o Comentarios adicionales")
+            
+            # Botón definitivo para procesar el envío
+            boton_guardar = st.form_submit_button("💾 Guardar Cliente en Base de Datos", type="primary")
+            
+        # Lógica que se ejecuta al presionar el botón de Guardar
+        if boton_guardar:
+            if not empresa:
+                st.error("❌ El campo 'Empresa / Institución' es obligatorio para registrar el cliente.")
+            else:
+                try:
+                    # Armamos el diccionario vinculando tus palabras de los inputs con los nombres técnicos de Supabase
+                    nuevo_registro = {
+                        "empresa_institucion": empresa,
+                        "contacto": contacto,
+                        "vendedor": vendedor,
+                        "rubro": rubro,
+                        "cargo": cargo,
+                        "sector": sector,
+                        "estado_cliente": estado,
+                        "calificacion": calificacion,
+                        "zonaa": zona_abrev,
+                        "mail": mail,
+                        "telefono": telefono,
+                        "celular": celular,
+                        "zona": zona,
+                        "subzona": subzona,
+                        "direccion": direccion,
+                        "web": web,
+                        "imaps": imaps,
+                        "observaciones": observaciones
+                    }
+                    
+                    # Enviamos el comando INSERT a tu tabla real de Supabase
+                    conn_directa.table("clientes_tbl").insert(nuevo_registro).execute()
+                    
+                    st.success(f"🎉 ¡El cliente '{empresa}' ha sido incorporado exitosamente a clientes_tbl!")
+                    # Limpiamos la memoria caché para que la pestaña de visualización muestre al nuevo cliente de inmediato
+                    st.cache_data.clear()
+                except Exception as e:
+                    st.error(f"❌ Error crítico al insertar el registro en Supabase: {e}")
 else:
     st.error("Fallo de autenticación con el servidor.")

@@ -12,7 +12,7 @@ conn = cns.obtener_conexion()
 
 if conn is not None:
     # Lógica de carga apuntando a los nombres reales que se ven en tu pantalla de Supabase
-    df_total = cns.cargar_clientes(conn)
+    df_total = cns.cargar_clientes_tbl(conn)
     
     # 🚨 CORREGIDO: Buscamos "cotizaciones_tbl" que es el nombre real en tu base de datos
     df_registros = cns.cargar_tabla_generica(conn, "cotizaciones_tbl", ["ID Coti", "Fecha", "Empresa", "Detalle/Pliego", "Monto"])

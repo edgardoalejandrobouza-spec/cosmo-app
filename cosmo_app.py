@@ -7,6 +7,30 @@ st.set_page_config(page_title="Cosmo - Módulo Clientes Directo", layout="wide",
 st.title("🚀 Sistema de Gestión Integral - Cosmo")
 st.write("Visualización directa de clientes_tbl desde Supabase con filtros avanzados.")
 
+# --- CAMBIO DE COLOR A AZUL CELESTE (ESTILOS CSS) ---
+st.markdown(
+    """
+    <style>
+    /* Cambia el fondo y borde de las etiquetas seleccionadas en el multiselect */
+    span[data-baseweb="tag"] {
+        background-color: #E0F7FA !important; /* Fondo celeste claro */
+        color: #006064 !important; /* Texto azul oscuro/turquesa para buen contraste */
+        border: 1px solid #B2EBF2 !important; /* Borde celeste */
+        border-radius: 4px !important;
+    }
+    /* Cambia el color de la X para borrar la etiqueta */
+    span[data-baseweb="tag"] role[button] or svg {
+        fill: #006064 !important;
+    }
+    /* Cambia el color del texto del término a buscar o inputs cuando se seleccionan */
+    .stTextInput div[data-baseweb="input"] {
+        border-color: #4DD0E1 !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # 1. Función de conexión integrada directamente aquí
 def iniciar_conexion_directa() -> Client:
     """Inicializa el cliente oficial de Supabase leyendo los secrets."""

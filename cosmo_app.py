@@ -84,7 +84,7 @@ if conn_directa is not None:
         # --- RENDERIZADO DE TABLA ---
         st.subheader("👥 Listado General de Clientes (clientes_tbl)")
         st.write(f"Mostrando **{len(df_filtrado)}** de **{len(df_total)}** registros totales.")
-          st.dataframe(df_filtrado, width="stretch", hide_index=True)
+        st.dataframe(df_filtrado, width="stretch", hide_index=True)
 
     else:
         st.warning("La tabla 'clientes_tbl' no devolvió registros.")

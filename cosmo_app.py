@@ -11,7 +11,7 @@ url: str = st.secrets["SUPABASE_URL"]
 key: str = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(url, key)
 
-st.title("📊 Monitoreo de Cotizaciones — Cosmo App")
+st.title("📊 Monitoreo de Cotizaciones — CosmoBio")
 st.markdown("---")
 
 # Lista de columnas reales disponibles en tu tabla para los menús desplegables

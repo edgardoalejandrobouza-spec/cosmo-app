@@ -5,7 +5,7 @@ from supabase import create_client, Client
 # Configuración estética de la aplicación global
 st.set_page_config(page_title="Cosmo - Gestión Integral", layout="wide", page_icon="🚀")
 st.title("🚀 Sistema de Gestión - CosmoBio")
-st.write("Panel unificado para la administración, búsqueda e incorporación de clientes en tiempo real.")
+st.write("Panel para la administración, búsqueda e incorporación de clientes en tiempo real.")
 
 # --- ESTILOS CSS AZUL CELESTE ---
 st.markdown(

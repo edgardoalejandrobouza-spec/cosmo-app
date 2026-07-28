@@ -172,25 +172,40 @@ st.markdown("---")
 st.subheader("📈 Volumen de Cotizaciones por Año")
 
 try:
-    # Consulta limpia usando la sintaxis correcta sin barras invertidas
-    query_grafico = (
-        supabase.table("cotizaciones_tbl")
-        .select("fecha_de_inicio")
-        .not_.is_("fecha_de_inicio", "null")
-        .execute()
-    )
-    
-    if query_grafico.data:
+    # 1. Bucle inteligente para traer TODOS los 11,303 registros por bloques
+    todos_los_datos_grafico = []
+    bloque_size = 1000
+    inicio = 0
+
+    while True:
+        respuesta_bloque = (
+            supabase.table("cotizaciones_tbl")
+            .select("fecha_de_inicio")
+            .not_.is_("fecha_de_inicio", "null")
+            .range(inicio, inicio + bloque_size - 1)
+            .execute()
+        )
+        
+        # Si ya no quedan más registros en la base de datos, rompe el ciclo
+        if not respuesta_bloque.data:
+            break
+            
+        todos_los_datos_grafico.extend(respuesta_bloque.data)
+        inicio += bloque_size
+
+    # 2. Si logramos acumular registros con fecha, armamos el gráfico
+    if todos_los_datos_grafico:
         import pandas as pd
         import altair as alt
 
-        df_grafico = pd.DataFrame(query_grafico.data)
+        df_grafico = pd.DataFrame(todos_los_datos_grafico)
         df_grafico["fecha_de_inicio"] = pd.to_datetime(df_grafico["fecha_de_inicio"])
         df_grafico["Año"] = df_grafico["fecha_de_inicio"].dt.year
         
         df_resumen = df_grafico.groupby("Año").size().reset_index(name="Cantidad")
         df_resumen["Año"] = df_resumen["Año"].astype(str)
 
+        # 3. Creamos el gráfico interactivo de Altair
         grafico_barras = alt.Chart(df_resumen).mark_bar(
             cornerRadiusTopLeft=5,
             cornerRadiusTopRight=5,
@@ -210,7 +225,8 @@ try:
             st.dataframe(df_resumen.set_index("Año"), use_container_width=True)
             
     else:
-        st.info("No hay datos de fechas disponibles para armar el gráfico.")
+        st.info("No se encontraron registros con fechas válidas en toda la base de datos.")
 
 except Exception as e_grafico:
     st.error(f"No se pudo generar el gráfico de barras: {e_grafico}")
+

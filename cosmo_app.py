@@ -164,12 +164,11 @@ try:
 except Exception as e:
     st.error(f"Error crítico al conectar o consultar Supabase: {e}")
 
-
 # ==========================================
 # 6. GRÁFICO DE BARRAS: COTIZACIONES POR AÑO
 # ==========================================
 st.markdown("---")
-st.subheader("📈 Volumen de Cotizaciones por Año")
+st.subheader("📊 Volumen de Cotizaciones por Año")
 
 try:
     # 1. Bucle inteligente para traer TODOS los 11,303 registros por bloques
@@ -186,43 +185,34 @@ try:
             .execute()
         )
         
-        # Si ya no quedan más registros en la base de datos, rompe el ciclo
         if not respuesta_bloque.data:
             break
             
         todos_los_datos_grafico.extend(respuesta_bloque.data)
         inicio += bloque_size
 
-    # 2. Si logramos acumular registros con fecha, armamos el gráfico
     if todos_los_datos_grafico:
         import pandas as pd
-        import altair as alt
 
+        # 2. Convertimos a DataFrame de Pandas
         df_grafico = pd.DataFrame(todos_los_datos_grafico)
         df_grafico["fecha_de_inicio"] = pd.to_datetime(df_grafico["fecha_de_inicio"])
+        
+        # Extraemos el Año como número entero para el gráfico nativo
         df_grafico["Año"] = df_grafico["fecha_de_inicio"].dt.year
         
-        df_resumen = df_grafico.groupby("Año").size().reset_index(name="Cantidad")
-        df_resumen["Año"] = df_resumen["Año"].astype(str)
-
-        # 3. Creamos el gráfico interactivo de Altair
-        grafico_barras = alt.Chart(df_resumen).mark_bar(
-            cornerRadiusTopLeft=5,
-            cornerRadiusTopRight=5,
-            color="#1f77b4"
-        ).encode(
-            x=alt.X("Año:N", title="Año de Inicio", axis=alt.Axis(labelAngle=0)),
-            y=alt.Y("Cantidad:Q", title="Total de Cotizaciones"),
-            tooltip=["Año", "Cantidad"]
-        ).properties(
-            width=800,
-            height=400
-        ).interactive()
-
-        st.altair_chart(grafico_barras, use_container_width=True)
+        # 3. Agrupamos, contamos y reseteamos el índice de forma limpia
+        df_resumen = df_grafico.groupby("Año").size().reset_index(name="Cantidad de Cotizaciones")
         
+        # Configurar el Año como índice numérico puro
+        df_resumen = df_resumen.set_index("Año")
+
+        # 4. Renderizamos con st.bar_chart especificando la columna exacta a dibujar
+        st.bar_chart(df_resumen, use_container_width=True)
+        
+        # Mantener tu tabla resumen abierta abajo
         with st.expander("📊 Ver tabla de datos numéricos del gráfico"):
-            st.dataframe(df_resumen.set_index("Año"), use_container_width=True)
+            st.dataframe(df_resumen, use_container_width=True)
             
     else:
         st.info("No se encontraron registros con fechas válidas en toda la base de datos.")

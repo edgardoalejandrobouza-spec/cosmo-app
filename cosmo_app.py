@@ -139,3 +139,63 @@ try:
 
 except Exception as e:
     st.error(f"Error crítico al conectar o consultar Supabase: {e}")
+# ==========================================
+# 6. GRÁFICO DE BARRAS: COTIZACIONES POR AÑO
+# ==========================================
+st.markdown("---")
+st.subheader("📈 Volumen de Cotizaciones por Año")
+
+try:
+    # 1. Consulta SQL optimizada enviada a Supabase para agrupar por año
+    # Usamos date_part o EXTRACT para sacar el año de la fecha real de forma ultra veloz
+    query_grafico = supabase.table("cotizaciones_tbl") \
+        .select("fecha_de_inicio") \
+        .not.is_("fecha_de_inicio", "null") \
+        .execute()
+    
+    if query_grafico.data:
+        import pandas as pd
+        import altair as alt
+
+        # 2. Convertimos a DataFrame de Pandas
+        df_grafico = pd.DataFrame(query_grafico.data)
+        
+        # Convertimos la columna a tipo datetime en Pandas para extraer el año
+        df_grafico["fecha_de_inicio"] = pd.to_datetime(df_grafico["fecha_de_inicio"])
+        df_grafico["Año"] = df_grafico["fecha_de_inicio"].dt.year
+        
+        # 3. Agrupamos y contamos cuántas cotizaciones hay por cada año
+        df_resumen = df_grafico.groupby("Año").size().reset_index(name="Cantidad")
+        
+        # Aseguramos que el Año se muestre como texto para que el gráfico no le ponga comas (ej: 2,026)
+        df_resumen["Año"] = df_resumen["Año"].astype(str)
+
+        # 4. Creamos el gráfico de barras interactivo con Altair
+        grafico_barras = alt.Chart(df_resumen).mark_bar(
+            cornerRadiusTopLeft=5,
+            cornerRadiusTopRight=5,
+            color="#1f77b4" # Color azul estándar, podés cambiarlo por el de tu marca
+        ).encode(
+            x=alt.X("Año:N", title="Año de Inicio", axis=alt.Axis(labelAngle=0)),
+            y=alt.Y("Cantidad:Q", title="Total de Cotizaciones"),
+            tooltip=["Año", "Cantidad"] # Muestra los datos exactos al pasar el mouse por encima
+        ).properties(
+            width=800,
+            height=400
+        ).interactive() # Permite hacer zoom o arrastrar el gráfico
+
+        # 5. Renderizamos el gráfico ocupando todo el ancho de la pantalla
+        st.altair_chart(grafico_barras, use_container_width=True)
+        
+        # Muestra una pequeña tabla resumen abajo por si querés ver los números exactos
+        with st.expander("📊 Ver tabla de datos numéricos del gráfico"):
+            st.dataframe(df_resumen.set_index("Año"), use_container_width=True)
+            
+    else:
+        st.info("No hay datos de fechas disponibles para armar el gráfico.")
+
+except Exception as e_grafico:
+    st.error(f"No se pudo generar el gráfico de barras: {e_grafico}")
+
+
+

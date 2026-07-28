@@ -220,3 +220,61 @@ try:
 except Exception as e_grafico:
     st.error(f"No se pudo generar el gráfico de barras: {e_grafico}")
 
+# ==========================================
+# 7. GRÁFICO DE BARRAS: VOLUMEN POR PROVEEDOR
+# ==========================================
+st.markdown("---")
+st.subheader("🏢 Volumen de Cotizaciones por Proveedor")
+
+try:
+    # 1. Bucle inteligente para traer TODOS los 11,303 registros (columna prov)
+    todos_los_datos_prov = []
+    bloque_size = 1000
+    inicio = 0
+
+    while True:
+        respuesta_bloque = (
+            supabase.table("cotizaciones_tbl")
+            .select("prov")
+            .not_.is_("prov", "null")
+            .range(inicio, inicio + bloque_size - 1)
+            .execute()
+        )
+        
+        if not respuesta_bloque.data:
+            break
+            
+        todos_los_datos_prov.extend(respuesta_bloque.data)
+        inicio += bloque_size
+
+    if todos_los_datos_prov:
+        import pandas as pd
+
+        # 2. Convertimos a DataFrame de Pandas
+        df_prov = pd.DataFrame(todos_los_datos_prov)
+        
+        # Limpieza: quitamos espacios en blanco vacíos que puedan venir en el texto
+        df_prov["prov"] = df_prov["prov"].astype(str).str.strip()
+        
+        # 3. Agrupamos y contamos cuántas cotizaciones tiene cada proveedor
+        df_resumen_prov = df_prov.groupby("prov").size().reset_index(name="Total Cotizaciones")
+        
+        # Ordenamos de mayor a menor para que la barra más larga quede arriba del todo
+        df_resumen_prov = df_resumen_prov.sort_values(by="Total Cotizaciones", ascending=False)
+        
+        # Configuramos 'prov' como el índice para que Streamlit arme las etiquetas del eje correctamente
+        df_resumen_prov = df_resumen_prov.set_index("prov")
+
+        # 4. Renderizamos el gráfico nativo de Streamlit
+        # Al no especificar orientación, si el índice es texto, Streamlit lo adapta de forma óptima
+        st.bar_chart(df_resumen_prov, y="Total Cotizaciones", use_container_width=True)
+        
+        # Desplegamos la tabla numérica abajo en un expansor por si querés auditar las cifras exactas
+        with st.expander("📊 Ver tabla analítica de proveedores"):
+            st.dataframe(df_resumen_prov, use_container_width=True)
+            
+    else:
+        st.info("No se encontraron registros de proveedores en la base de datos.")
+
+except Exception as e_prov:
+    st.error(f"No se pudo generar el diagrama de proveedores: {e_prov}")

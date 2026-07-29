@@ -13,7 +13,7 @@ st.set_page_config(
 if "seccion_activa" not in st.session_state:
     st.session_state.seccion_activa = "cotizaciones"
 
-st.title("🚀 Sistema de Gestión Integrado — Cosmo App")
+st.title("🚀 Sistema de Gestión CosmoBio")
 st.markdown("---")
 
 # ==========================================
